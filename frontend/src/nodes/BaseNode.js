@@ -1,116 +1,49 @@
 // frontend/src/nodes/BaseNode.js
-// Glassmorphism styled base node for Part 2
 
 import { useState } from 'react';
 import { Handle, Position } from 'reactflow';
+import {
+  Box,
+  Typography,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from '@mui/material';
 
-const styles = {
-  node: {
-    minHeight: '90px',
-    background: 'rgba(0, 20, 14, 0.6)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border: '1px solid rgba(0, 255, 180, 0.15)',
-    borderRadius: '10px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,255,180,0.08)',
-    overflow: 'hidden',
-    fontFamily: 'var(--font-display)',
-    position: 'relative',
-    transition: 'box-shadow 0.2s ease',
+// Shared MUI sx styles for fields
+const inputSx = {
+  '& .MuiInputBase-root': {
+    fontFamily: "'Space Mono', monospace",
+    fontSize: '12px',
+    color: '#e0fff5',
+    background: 'rgba(0,255,180,0.04)',
+    borderRadius: '5px',
   },
-  header: {
-    padding: '8px 12px',
-    background: 'linear-gradient(90deg, rgba(0,255,179,0.12) 0%, rgba(57,255,143,0.06) 100%)',
-    borderBottom: '1px solid rgba(0,255,180,0.12)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '7px',
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(0,255,180,0.12)',
   },
-  headerDot: {
-    width: '7px',
-    height: '7px',
-    borderRadius: '50%',
-    background: 'var(--cyan)',
-    boxShadow: '0 0 6px var(--cyan)',
-    flexShrink: 0,
+  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'rgba(0,255,180,0.3)',
   },
-  headerTitle: {
-    fontSize: '13px',
-    fontWeight: '600',
-    letterSpacing: '0.08em',
-    color: 'var(--cyan)',
-    textTransform: 'uppercase',
-    fontFamily: "'Rajdhani', sans-serif",
+  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#00ffb3',
+    boxShadow: '0 0 0 2px rgba(0,255,179,0.15)',
   },
-  body: {
-    padding: '10px 12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '7px',
-  },
-  fieldWrapper: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '3px',
-  },
-  fieldLabel: {
+  '& .MuiInputLabel-root': {
+    fontFamily: "'Space Mono', monospace",
     fontSize: '10px',
-    fontWeight: '500',
     letterSpacing: '0.1em',
-    color: 'rgba(122,184,154,0.8)',
     textTransform: 'uppercase',
-    fontFamily: "'Space Mono', monospace",
-  },
-  input: {
-    width: '100%',
-    background: 'rgba(0,255,180,0.04)',
-    border: '1px solid rgba(0,255,180,0.12)',
-    borderRadius: '5px',
-    color: '#e0fff5',
-    fontSize: '12px',
-    padding: '5px 8px',
-    fontFamily: "'Space Mono', monospace",
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-  },
-  select: {
-    width: '100%',
-    background: 'rgba(0, 14, 10, 0.8)',
-    border: '1px solid rgba(0,255,180,0.12)',
-    borderRadius: '5px',
-    color: '#e0fff5',
-    fontSize: '12px',
-    padding: '5px 8px',
-    fontFamily: "'Space Mono', monospace",
-    outline: 'none',
-    cursor: 'pointer',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-  },
-  textarea: {
-    width: '100%',
-    background: 'rgba(0,255,180,0.04)',
-    border: '1px solid rgba(0,255,180,0.12)',
-    borderRadius: '5px',
-    color: '#e0fff5',
-    fontSize: '12px',
-    padding: '5px 8px',
-    fontFamily: "'Space Mono', monospace",
-    outline: 'none',
-    resize: 'vertical',
-    minHeight: '60px',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-  },
-  display: {
-    fontSize: '11px',
     color: 'rgba(122,184,154,0.8)',
-    fontFamily: "'Space Mono', monospace",
-    padding: '4px 0',
   },
-};
-
-const focusStyle = {
-  borderColor: '#00ffb3',
-  boxShadow: '0 0 0 2px rgba(0,255,179,0.15)',
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#00ffb3',
+  },
+  '& .MuiSelect-icon': {
+    color: 'rgba(0,255,180,0.5)',
+  },
 };
 
 export const BaseNode = ({ id, config }) => {
@@ -120,71 +53,96 @@ export const BaseNode = ({ id, config }) => {
   });
 
   const [fieldValues, setFieldValues] = useState(initialFields);
-  const [focusedKey, setFocusedKey] = useState(null);
 
   const handleChange = (key, value) => {
     setFieldValues((prev) => ({ ...prev, [key]: value }));
   };
 
   const renderField = (field) => {
-    const isFocused = focusedKey === field.key;
-    const focusOverride = isFocused ? focusStyle : {};
-
     switch (field.type) {
       case 'text':
         return (
-          <div key={field.key} style={styles.fieldWrapper}>
-            {field.label && <span style={styles.fieldLabel}>{field.label}</span>}
-            <input
-              type="text"
-              value={fieldValues[field.key]}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              onFocus={() => setFocusedKey(field.key)}
-              onBlur={() => setFocusedKey(null)}
-              style={{ ...styles.input, ...focusOverride }}
-            />
-          </div>
+          <TextField
+            key={field.key}
+            label={field.label}
+            value={fieldValues[field.key]}
+            onChange={(e) => handleChange(field.key, e.target.value)}
+            size="small"
+            fullWidth
+            sx={inputSx}
+            inputProps={{
+              style: { fontFamily: "'Space Mono', monospace", fontSize: '12px', color: '#e0fff5' },
+            }}
+          />
         );
 
       case 'select':
         return (
-          <div key={field.key} style={styles.fieldWrapper}>
-            {field.label && <span style={styles.fieldLabel}>{field.label}</span>}
-            <select
+          <FormControl key={field.key} size="small" fullWidth sx={inputSx}>
+            <InputLabel>{field.label}</InputLabel>
+            <Select
               value={fieldValues[field.key]}
+              label={field.label}
               onChange={(e) => handleChange(field.key, e.target.value)}
-              onFocus={() => setFocusedKey(field.key)}
-              onBlur={() => setFocusedKey(null)}
-              style={{ ...styles.select, ...focusOverride }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    background: '#020b12',
+                    border: '1px solid rgba(0,255,180,0.15)',
+                    '& .MuiMenuItem-root': {
+                      fontFamily: "'Space Mono', monospace",
+                      fontSize: '12px',
+                      color: '#e0fff5',
+                    },
+                    '& .MuiMenuItem-root:hover': {
+                      background: 'rgba(0,255,180,0.08)',
+                    },
+                    '& .MuiMenuItem-root.Mui-selected': {
+                      background: 'rgba(0,255,180,0.12)',
+                    },
+                  },
+                },
+              }}
+              sx={{ fontFamily: "'Space Mono', monospace", fontSize: '12px', color: '#e0fff5' }}
             >
               {field.options.map((opt) => (
-                <option key={opt} value={opt} style={{ background: '#020b12' }}>
-                  {opt}
-                </option>
+                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormControl>
         );
 
       case 'textarea':
         return (
-          <div key={field.key} style={styles.fieldWrapper}>
-            {field.label && <span style={styles.fieldLabel}>{field.label}</span>}
-            <textarea
-              value={fieldValues[field.key]}
-              onChange={(e) => handleChange(field.key, e.target.value)}
-              onFocus={() => setFocusedKey(field.key)}
-              onBlur={() => setFocusedKey(null)}
-              style={{ ...styles.textarea, ...focusOverride }}
-            />
-          </div>
+          <TextField
+            key={field.key}
+            label={field.label || undefined}
+            value={fieldValues[field.key]}
+            onChange={(e) => handleChange(field.key, e.target.value)}
+            size="small"
+            fullWidth
+            multiline
+            rows={3}
+            sx={inputSx}
+            inputProps={{
+              style: { fontFamily: "'Space Mono', monospace", fontSize: '12px', color: '#e0fff5' },
+            }}
+          />
         );
 
       case 'display':
         return (
-          <div key={field.key}>
-            <span style={styles.display}>{field.defaultValue}</span>
-          </div>
+          <Typography
+            key={field.key}
+            sx={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '11px',
+              color: 'rgba(122,184,154,0.8)',
+              py: 0.5,
+            }}
+          >
+            {field.defaultValue}
+          </Typography>
         );
 
       default:
@@ -193,7 +151,21 @@ export const BaseNode = ({ id, config }) => {
   };
 
   return (
-    <div style={{ ...styles.node, width: config.width || 220 }}>
+    <Box
+      sx={{
+        width: config.width || 220,
+        minHeight: 90,
+        background: 'rgba(0, 20, 14, 0.6)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(0,255,180,0.15)',
+        borderRadius: '10px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,255,180,0.08)',
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'box-shadow 0.2s ease',
+      }}
+    >
       {/* Input Handles */}
       {config.inputs.map((handle) => (
         <Handle
@@ -206,15 +178,45 @@ export const BaseNode = ({ id, config }) => {
       ))}
 
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerDot} />
-        <span style={styles.headerTitle}>{config.title}</span>
-      </div>
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1,
+          background: 'linear-gradient(90deg, rgba(0,255,179,0.12) 0%, rgba(57,255,143,0.06) 100%)',
+          borderBottom: '1px solid rgba(0,255,180,0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.8,
+        }}
+      >
+        <Box
+          sx={{
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            background: '#00ffb3',
+            boxShadow: '0 0 6px #00ffb3',
+            flexShrink: 0,
+          }}
+        />
+        <Typography
+          sx={{
+            fontFamily: "'Rajdhani', sans-serif",
+            fontSize: '13px',
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            color: '#00ffb3',
+            textTransform: 'uppercase',
+          }}
+        >
+          {config.title}
+        </Typography>
+      </Box>
 
-      {/* Body */}
-      <div style={styles.body}>
+      {/* Body / Fields */}
+      <Box sx={{ px: 1.5, py: 1.2, display: 'flex', flexDirection: 'column', gap: 1 }}>
         {config.fields.map((field) => renderField(field))}
-      </div>
+      </Box>
 
       {/* Output Handles */}
       {config.outputs.map((handle) => (
@@ -226,6 +228,6 @@ export const BaseNode = ({ id, config }) => {
           style={handle.top ? { top: handle.top } : {}}
         />
       ))}
-    </div>
+    </Box>
   );
 };

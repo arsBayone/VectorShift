@@ -1,13 +1,14 @@
 // frontend/src/nodes/textNode.js
-// Part 3: Dynamic resizing + variable handle detection ({{ varName }} syntax)
-// This node is standalone (does not use BaseNode) because it needs special logic.
+// Standalone node (does not use BaseNode) — needs special dynamic logic
+// for resizing and variable handle detection.
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
+import { Box, Typography, TextField, Chip } from '@mui/material';
 
-// --- Helpers ---
+const MIN_WIDTH = 220;
+const MAX_WIDTH = 500;
 
-// Extracts all {{ varName }} patterns from text and returns unique valid variable names
 const extractVariables = (text) => {
   const regex = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g;
   const vars = new Set();
@@ -18,160 +19,55 @@ const extractVariables = (text) => {
   return Array.from(vars);
 };
 
-// Min/max node dimensions
-const MIN_WIDTH = 220;
-const MAX_WIDTH = 500;
-const MIN_HEIGHT = 80;
-
-// --- Styles (matching glassmorphism theme from Part 2) ---
-const styles = {
-  node: {
-    background: 'rgba(0, 20, 14, 0.6)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border: '1px solid rgba(0, 255, 180, 0.15)',
-    borderRadius: '10px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,255,180,0.08)',
-    overflow: 'hidden',
-    position: 'relative',
-    transition: 'width 0.15s ease, box-shadow 0.2s ease',
-  },
-  header: {
-    padding: '8px 12px',
-    background: 'linear-gradient(90deg, rgba(0,255,179,0.12) 0%, rgba(57,255,143,0.06) 100%)',
-    borderBottom: '1px solid rgba(0,255,180,0.12)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '7px',
-  },
-  headerDot: {
-    width: '7px',
-    height: '7px',
-    borderRadius: '50%',
-    background: '#00ffb3',
-    boxShadow: '0 0 6px #00ffb3',
-    flexShrink: 0,
-  },
-  headerTitle: {
-    fontSize: '13px',
-    fontWeight: '600',
-    letterSpacing: '0.08em',
-    color: '#00ffb3',
-    textTransform: 'uppercase',
-    fontFamily: "'Rajdhani', sans-serif",
-  },
-  body: {
-    padding: '10px 12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '7px',
-  },
-  fieldLabel: {
-    fontSize: '10px',
-    fontWeight: '500',
-    letterSpacing: '0.1em',
-    color: 'rgba(122,184,154,0.8)',
-    textTransform: 'uppercase',
-    fontFamily: "'Space Mono', monospace",
-    marginBottom: '3px',
-    display: 'block',
-  },
-  textarea: {
-    width: '100%',
-    background: 'rgba(0,255,180,0.04)',
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    borderColor: 'rgba(0,255,180,0.12)',
-    borderRadius: '5px',
-    color: '#e0fff5',
-    fontSize: '12px',
-    padding: '5px 8px',
-    fontFamily: "'Space Mono', monospace",
-    outline: 'none',
-    resize: 'none',
-    overflow: 'hidden',
-    lineHeight: '1.5',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-    display: 'block',
-    boxSizing: 'border-box',
-  },
-  textareaFocused: {
-    borderColor: '#00ffb3',
-    boxShadow: '0 0 0 2px rgba(0,255,179,0.15)',
-  },
-  varTag: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    flexWrap: 'wrap',
-    marginTop: '4px',
-  },
-  varBadge: {
-    fontSize: '9px',
-    fontFamily: "'Space Mono', monospace",
-    color: '#00ffb3',
-    background: 'rgba(0,255,180,0.08)',
-    border: '1px solid rgba(0,255,180,0.25)',
-    borderRadius: '4px',
-    padding: '2px 6px',
-    letterSpacing: '0.05em',
-  },
-  varLabel: {
-    fontSize: '9px',
-    fontFamily: "'Space Mono', monospace",
-    color: 'rgba(122,184,154,0.6)',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-  },
+const getHandleTop = (index, total) => {
+  if (total === 1) return '50%';
+  const step = 100 / (total + 1);
+  return `${step * (index + 1)}%`;
 };
 
 export const TextNode = ({ id, data }) => {
   const [text, setText] = useState(data?.text || '{{input}}');
-  const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef(null);
   const [nodeWidth, setNodeWidth] = useState(MIN_WIDTH);
+  const textareaRef = useRef(null);
 
-  // Extract valid variables from current text
   const variables = extractVariables(text);
 
-  // --- Dynamic height: auto-grow textarea to fit content ---
   const adjustHeight = useCallback(() => {
-    const el = textareaRef.current;
+    const el = textareaRef.current?.querySelector('textarea');
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.max(el.scrollHeight, MIN_HEIGHT)}px`;
+    el.style.height = `${el.scrollHeight}px`;
   }, []);
 
-  // --- Dynamic width: grow node based on longest line ---
   const adjustWidth = useCallback((value) => {
     const lines = value.split('\n');
-    const longestLine = Math.max(...lines.map((l) => l.length));
-    // Approx 7.5px per character in Space Mono 12px + padding
-    const computed = Math.min(Math.max(longestLine * 7.5 + 40, MIN_WIDTH), MAX_WIDTH);
+    const longest = Math.max(...lines.map((l) => l.length));
+    const computed = Math.min(Math.max(longest * 7.5 + 40, MIN_WIDTH), MAX_WIDTH);
     setNodeWidth(computed);
   }, []);
 
-  // Run both adjustments on every text change
   useEffect(() => {
     adjustHeight();
     adjustWidth(text);
   }, [text, adjustHeight, adjustWidth]);
 
-  const handleChange = (e) => {
-    setText(e.target.value);
-  };
-
-  // Distribute variable handles evenly on the left side
-  const getHandleTop = (index, total) => {
-    if (total === 1) return '50%';
-    const step = 100 / (total + 1);
-    return `${step * (index + 1)}%`;
-  };
-
   return (
-    <div style={{ ...styles.node, width: `${nodeWidth}px` }}>
-
-      {/* Dynamic variable input handles — left side */}
+    <Box
+      sx={{
+        width: nodeWidth,
+        minHeight: 90,
+        background: 'rgba(0, 20, 14, 0.6)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(0,255,180,0.15)',
+        borderRadius: '10px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,255,180,0.08)',
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'width 0.15s ease',
+      }}
+    >
+      {/* Dynamic variable handles — left side */}
       {variables.map((varName, i) => (
         <Handle
           key={varName}
@@ -190,38 +86,84 @@ export const TextNode = ({ id, data }) => {
       />
 
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerDot} />
-        <span style={styles.headerTitle}>Text</span>
-      </div>
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1,
+          background: 'linear-gradient(90deg, rgba(0,255,179,0.12) 0%, rgba(57,255,143,0.06) 100%)',
+          borderBottom: '1px solid rgba(0,255,180,0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.8,
+        }}
+      >
+        <Box sx={{ width: 7, height: 7, borderRadius: '50%', background: '#00ffb3', boxShadow: '0 0 6px #00ffb3', flexShrink: 0 }} />
+        <Typography sx={{ fontFamily: "'Rajdhani', sans-serif", fontSize: '13px', fontWeight: 600, letterSpacing: '0.08em', color: '#00ffb3', textTransform: 'uppercase' }}>
+          Text
+        </Typography>
+      </Box>
 
       {/* Body */}
-      <div style={styles.body}>
-        <span style={styles.fieldLabel}>Content</span>
-        <textarea
+      <Box sx={{ px: 1.5, py: 1.2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <TextField
           ref={textareaRef}
+          label="Content"
           value={text}
-          onChange={handleChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          style={{
-            ...styles.textarea,
-            ...(isFocused ? styles.textareaFocused : {}),
-          }}
-          rows={1}
+          onChange={(e) => setText(e.target.value)}
+          size="small"
+          fullWidth
+          multiline
           placeholder="Type text or use {{ variable }} syntax..."
+          sx={{
+            '& .MuiInputBase-root': {
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '12px',
+              color: '#e0fff5',
+              background: 'rgba(0,255,180,0.04)',
+              borderRadius: '5px',
+              alignItems: 'flex-start',
+            },
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,255,180,0.12)' },
+            '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,255,180,0.3)' },
+            '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: '#00ffb3',
+              boxShadow: '0 0 0 2px rgba(0,255,179,0.15)',
+            },
+            '& .MuiInputLabel-root': { fontFamily: "'Space Mono', monospace", fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(122,184,154,0.8)' },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#00ffb3' },
+            '& textarea': { resize: 'none', overflow: 'hidden !important' },
+          }}
+          inputProps={{
+            style: { fontFamily: "'Space Mono', monospace", fontSize: '12px', color: '#e0fff5' },
+          }}
         />
 
-        {/* Variable badges — show detected variables */}
+        {/* Variable badges */}
         {variables.length > 0 && (
-          <div style={styles.varTag}>
-            <span style={styles.varLabel}>vars:</span>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+            <Typography sx={{ fontFamily: "'Space Mono', monospace", fontSize: '9px', color: 'rgba(122,184,154,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              vars:
+            </Typography>
             {variables.map((v) => (
-              <span key={v} style={styles.varBadge}>{v}</span>
+              <Chip
+                key={v}
+                label={v}
+                size="small"
+                sx={{
+                  height: '18px',
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: '9px',
+                  color: '#00ffb3',
+                  background: 'rgba(0,255,180,0.08)',
+                  border: '1px solid rgba(0,255,180,0.25)',
+                  borderRadius: '4px',
+                  '& .MuiChip-label': { px: 0.8 },
+                }}
+              />
             ))}
-          </div>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
