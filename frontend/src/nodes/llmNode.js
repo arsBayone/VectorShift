@@ -1,34 +1,28 @@
-// llmNode.js
+// frontend/src/nodes/llmNode.js
 
-import { Handle, Position } from 'reactflow';
+import { BaseNode } from './BaseNode';
 
 export const LLMNode = ({ id, data }) => {
+  const config = {
+    title: 'LLM',
+    width: 200,
+    height: 80,
+    inputs: [
+      { id: 'system', label: 'System', top: '33%' },
+      { id: 'prompt', label: 'Prompt', top: '66%' },
+    ],
+    outputs: [
+      { id: 'response', label: 'Response' },
+    ],
+    fields: [
+      {
+        type: 'display',
+        key: 'description',
+        label: '',
+        defaultValue: 'This is a LLM.',
+      },
+    ],
+  };
 
-  return (
-    <div style={{width: 200, height: 80, border: '1px solid black'}}>
-      <Handle
-        type="target"
-        position={Position.Left}
-        id={`${id}-system`}
-        style={{top: `${100/3}%`}}
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        id={`${id}-prompt`}
-        style={{top: `${200/3}%`}}
-      />
-      <div>
-        <span>LLM</span>
-      </div>
-      <div>
-        <span>This is a LLM.</span>
-      </div>
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={`${id}-response`}
-      />
-    </div>
-  );
-}
+  return <BaseNode id={id} config={config} />;
+};

@@ -1,4 +1,4 @@
-// ui.js
+// frontend/src/ui.js
 // Displays the drag-and-drop UI
 // --------------------------------------------------
 
@@ -10,6 +10,11 @@ import { InputNode } from './nodes/inputNode';
 import { LLMNode } from './nodes/llmNode';
 import { OutputNode } from './nodes/outputNode';
 import { TextNode } from './nodes/textNode';
+import { MathNode } from './nodes/mathNode';
+import { ApiNode } from './nodes/apiNode';
+import { FilterNode } from './nodes/filterNode';
+import { NoteNode } from './nodes/noteNode';
+import { MergeNode } from './nodes/mergeNode';
 
 import 'reactflow/dist/style.css';
 
@@ -20,6 +25,11 @@ const nodeTypes = {
   llm: LLMNode,
   customOutput: OutputNode,
   text: TextNode,
+  math: MathNode,
+  api: ApiNode,
+  filter: FilterNode,
+  note: NoteNode,
+  merge: MergeNode,
 };
 
 const selector = (state) => ({
@@ -89,8 +99,8 @@ export const PipelineUI = () => {
     }, []);
 
     return (
-        <>
-        <div ref={reactFlowWrapper} style={{width: '100wv', height: '70vh'}}>
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div ref={reactFlowWrapper} style={{width: '100vw', flex: 1, height: '100%'}}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -110,6 +120,6 @@ export const PipelineUI = () => {
                 <MiniMap />
             </ReactFlow>
         </div>
-        </>
+        </div>
     )
 }
