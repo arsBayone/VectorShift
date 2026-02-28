@@ -4,7 +4,6 @@ import { BaseNode } from './BaseNode';
 export const OutputNode = ({ id, data }) => {
   const config = {
     title: 'Output',
-    nodeType: 'customOutput',
     width: 220,
     inputs: [{ id: 'value', label: 'Value' }],
     outputs: [],

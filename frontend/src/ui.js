@@ -96,7 +96,7 @@ export const PipelineUI = () => {
           variant={BackgroundVariant.Dots}
           gap={gridSize}
           size={1}
-          color="#C7C6C2"
+          color="rgba(0,255,180,0.15)"
         />
         <Controls />
         <MiniMap zoomable pannable />

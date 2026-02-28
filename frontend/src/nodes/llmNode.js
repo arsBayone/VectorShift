@@ -4,7 +4,6 @@ import { BaseNode } from './BaseNode';
 export const LLMNode = ({ id, data }) => {
   const config = {
     title: 'LLM',
-    nodeType: 'llm',
     width: 220,
     inputs: [
       { id: 'system', label: 'System', top: '38%' },

@@ -1,8 +1,10 @@
 // frontend/src/nodes/apiNode.js
 import { BaseNode } from './BaseNode';
+
 export const ApiNode = ({ id, data }) => {
   const config = {
-    title: 'API Request', nodeType: 'api', width: 230,
+    title: 'API Request',
+    width: 230,
     inputs: [{ id: 'body', label: 'Body' }],
     outputs: [{ id: 'response', label: 'Response' }],
     fields: [
